@@ -69,17 +69,17 @@ export function generatePropertyName(
 }
 
 /**
- * Clean display name: remove emojis, trim, normalize spaces
+ * Clean display name: strip everything that isn't useful for identifier generation.
+ *
+ * Strategy: whitelist approach – transliterate accented chars to ASCII first,
+ * then replace anything that is NOT a letter, digit, space, hyphen or underscore
+ * with a space (so exotic separators like → | () become word boundaries).
+ * This is resilient to any Unicode oddity without enumerating ranges.
  */
 function cleanDisplayName(displayName: string): string {
-    return displayName
-        // Remove emojis (Unicode emoji ranges)
-        .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
-        // Remove other special Unicode symbols
-        .replace(/[\u{2600}-\u{26FF}]/gu, '')
-        .replace(/[\u{2700}-\u{27BF}]/gu, '')
-        // Remove colons (common separator after emojis)
-        .replace(/^[\s:]+/, '')
+    return transliterate(displayName)
+        // Keep only ASCII letters, digits, and natural word separators
+        .replace(/[^a-zA-Z0-9\s\-_]/g, ' ')
         // Normalize whitespace
         .replace(/\s+/g, ' ')
         .trim();
@@ -178,7 +178,10 @@ function isReservedWord(name: string): boolean {
  * "My Workflow" → "MyWorkflowWorkflow"
  */
 export function generateClassName(workflowName: string): string {
-    const baseName = toPascalCase(cleanDisplayName(workflowName));
+    let baseName = toPascalCase(cleanDisplayName(workflowName));
+    
+    // Ensure valid identifier (strip remaining non-alphanumerics, handle leading digits, etc.)
+    baseName = ensureValidIdentifier(baseName);
     
     // Ensure ends with "Workflow" suffix
     if (!baseName.endsWith('Workflow')) {

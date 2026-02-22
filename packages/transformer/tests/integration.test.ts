@@ -21,8 +21,8 @@ describe('Naming Utils', () => {
             const context = createPropertyNameContext();
             expect(generatePropertyName('🚀 Start', context)).toBe('Start');
             expect(generatePropertyName('Node-1', context)).toBe('Node1');
-            // Note: @ is removed, but doesn't split words, so "My@Node" becomes "Mynode"
-            expect(generatePropertyName('My@Node', context)).toBe('Mynode');
+            // @ acts as word separator, so "My@Node" becomes "MyNode"
+            expect(generatePropertyName('My@Node', context)).toBe('MyNode');
         });
 
         it('should handle reserved JavaScript words', () => {

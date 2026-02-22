@@ -81,5 +81,25 @@ describe('Naming Utilities', () => {
             const result = generateClassName('🚀 Deploy Pipeline');
             expect(result).toBe('DeployPipelineWorkflow');
         });
+
+        it('should handle arrows and parentheses in workflow name', () => {
+            const result = generateClassName('HubSpot → Prefill PDF (Drive) → SignWell (placeholder)');
+            expect(result).toBe('HubspotPrefillPdfDriveSignwellPlaceholderWorkflow');
+        });
+
+        it('should handle multiple special separators', () => {
+            const result = generateClassName('Slack | Google Sheets → Email');
+            expect(result).toBe('SlackGoogleSheetsEmailWorkflow');
+        });
+
+        it('should handle brackets in workflow name', () => {
+            const result = generateClassName('CRM [v2] Sync Pipeline');
+            expect(result).toBe('CrmV2SyncPipelineWorkflow');
+        });
+
+        it('should handle accented characters in workflow name', () => {
+            const result = generateClassName('Données → Résumé');
+            expect(result).toBe('DonneesResumeWorkflow');
+        });
     });
 });
