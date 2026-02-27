@@ -92,8 +92,8 @@ Display all workflows with their current sync status.
 Shows a color-coded table of all workflows with their sync status, helping you understand the current state of your workflow synchronization. Supports filtering to show only local or remote workflows.
 
 **Options:**
-- `--local`: Show only workflows that exist locally (including EXIST_ONLY_LOCALLY, MODIFIED_LOCALLY, etc.)
-- `--remote`: Show only workflows that exist remotely (including EXIST_ONLY_REMOTELY, MODIFIED_REMOTELY, etc.)
+- `--local`: Show only workflows that exist locally (including `EXIST_ONLY_LOCALLY`, `MODIFIED_LOCALLY`, `TRACKED`, `CONFLICT`)
+- `--remote`: Show only workflows that exist remotely (including `EXIST_ONLY_REMOTELY`, `TRACKED`, `CONFLICT`)
 
 **Example:**
 ```bash
@@ -103,19 +103,16 @@ n8nac list --remote          # Show only remote workflows
 ```
 
 **Output:**
-- Status indicators with icons (✔ In Sync, ✏️ Modified Locally, ☁️ Modified Remotely, 💥 Conflicts, etc.)
+- Status indicators with icons (✔ Tracked, ✏️ Modified Locally, 💥 Conflicts, + Local Only, - Remote Only)
 - Workflow ID, name, and local path
 - Summary statistics showing counts by status
 
 **Status Types:**
-- `IN_SYNC` - Local and remote are identical
+- `TRACKED` - Both local and remote exist (may include remote-only changes — use pull to get them)
 - `MODIFIED_LOCALLY` - Local changes not yet pushed
-- `MODIFIED_REMOTELY` - Remote changes not yet pulled
 - `CONFLICT` - Both local and remote modified since last sync
 - `EXIST_ONLY_LOCALLY` - New local workflow not yet pushed
-- `EXIST_ONLY_REMOTELY` - New remote workflow not yet pulled
-- `DELETED_LOCALLY` - Local file removed
-- `DELETED_REMOTELY` - Remote workflow deleted
+- `EXIST_ONLY_REMOTELY` - Remote workflow not yet pulled locally
 
 ### `pull`
 Download workflows from n8n to local directory.
@@ -388,30 +385,33 @@ chmod -R 755 workflows/
 
 **Sync Issues**
 ```bash
-# Check if real-time sync is running
-# (Stop any running `n8nac start` processes first)
+# Check workflow status
+n8nac list
 
-# Pull fresh copy
-n8nac pull
+# Fetch remote state to update cache
+n8nac fetch <workflowId>
+
+# Pull fresh copy of a specific workflow
+n8nac pull --id <workflowId>
 
 # Push local changes
-n8nac push
+n8nac push --id <workflowId>
 ```
 
 ### Debug Mode
 Enable debug logging for detailed output:
 
 ```bash
-# Debug real-time sync mode
-DEBUG=n8n-as-code:* n8nac start
+# Debug pull operation
+DEBUG=n8n-as-code:* n8nac pull --id <workflowId>
 
 # Debug specific operations
-DEBUG=axios,n8n-as-code:* n8nac pull
+DEBUG=axios,n8n-as-code:* n8nac push --id <workflowId>
 ```
 
 ## 📚 Next Steps
 
-- [VS Code Extension Guide](/docs/usage/vscode-extension): Visual editing experience with real-time sync
+- [VS Code Extension Guide](/docs/usage/vscode-extension): Visual editing experience with git-like sync
 - [Getting Started](/docs/getting-started): Complete setup guide
 - [Contribution Guide](/docs/contribution): Understand the architecture and development
 

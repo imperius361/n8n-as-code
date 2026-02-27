@@ -14,7 +14,7 @@ This section is organized by the primary user-facing tools:
 
 | Tool | Purpose | Best For |
 |------|---------|----------|
-| **[VS Code Extension](/docs/usage/vscode-extension)** | Integrated development environment | Visual editing, real-time sync, workflow validation |
+| **[VS Code Extension](/docs/usage/vscode-extension)** | Integrated development environment | Visual editing, git-like sync, workflow validation |
 | **[CLI](/docs/usage/cli)** | Command-line interface | Automation, scripting, CI/CD integration |
 | **[Skills CLI](/docs/usage/skills)** | AI tools and node schemas | AI coding assistants, node search, schema retrieval |
 | **[Claude Skill](/docs/usage/claude-skill)** | Claude Agent Skill package | Using Claude AI to generate n8n workflows |
@@ -24,7 +24,7 @@ This section is organized by the primary user-facing tools:
 ### For Visual Workflow Editing (Recommended)
 Use the **VS Code Extension** if you:
 - Prefer a visual interface with split-view editing
-- Want real-time synchronization as you type
+- Want git-like synchronization (push/pull/fetch) with explicit control
 - Need workflow validation and schema checking
 - Work primarily in VS Code for development
 - Want to see n8n canvas preview while editing JSON
@@ -44,9 +44,9 @@ Use the **CLI** if you:
 ```mermaid
 graph LR
     A[Install Extension] --> B[Configure Connection]
-    B --> C[Pull Workflows]
+    B --> C[Fetch & Pull Workflows]
     C --> D[Edit in Split View]
-    D --> E[Auto-sync to n8n]
+    D --> E[Push to n8n via Context Menu]
     E --> F[Version Control with Git]
 ```
 
@@ -65,8 +65,9 @@ graph LR
 
 ### VS Code + Git Integration
 
-1. **Edit workflows** in VS Code with real-time sync
-2. **Commit changes** to Git for version control
+1. **Edit workflows** in VS Code with git-like sync controls
+2. **Push changes** to n8n via the context menu
+3. **Commit changes** to Git for version control
 3. **Review changes** using Git diff
 4. **Collaborate** with team members via Git
 5. **Deploy** using CI/CD pipelines
@@ -163,7 +164,7 @@ Generate context files that help AI coding assistants understand n8n workflow st
 
 Explore the specific guides for each tool:
 
-- **[VS Code Extension Guide](/docs/usage/vscode-extension)**: Learn about visual editing, real-time sync, and advanced features
+- **[VS Code Extension Guide](/docs/usage/vscode-extension)**: Learn about visual editing, git-like sync, and advanced features
 - **[CLI Guide](/docs/usage/cli)**: Master command-line usage, automation, and scripting
 - **[Skills CLI Guide](/docs/usage/skills)**: Use AI tools for node search and schema retrieval
 

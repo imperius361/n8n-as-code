@@ -337,10 +337,10 @@ cat n8nac-config.json
 ### Check Console Output
 ```bash
 # For CLI operations, check console output
-n8nac pull
+n8nac list
 
-# For real-time sync mode, check the terminal output
-n8nac start
+# Debug a specific pull operation
+DEBUG=n8n-as-code:* n8nac pull --id <workflowId>
 ```
 
 ### Check VS Code Output Panel
@@ -408,11 +408,10 @@ n8nac pull
    - Consider archiving unused workflows in n8n
    - Use tags to filter workflows if supported in future versions
 
-3. **Use `start` Mode:**
-   ```bash
-   # Real-time sync is more efficient than repeated pull/push
-   n8nac start
-   ```
+3. **Work Incrementally:**
+   - Fetch and pull only the specific workflows you need
+   - Use `n8nac fetch <workflowId>` to update cache for individual workflows
+   - Use `n8nac pull --id <workflowId>` to pull only what you need
 
 ### High Memory Usage
 **Solutions:**

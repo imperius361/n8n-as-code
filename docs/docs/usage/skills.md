@@ -248,7 +248,7 @@ This command creates:
 - Documentation files for AI context
 
 ### VS Code Extension
-For visual editing and real-time sync, use the [VS Code Extension](/docs/usage/vscode-extension).
+For visual editing with git-like sync controls, use the [VS Code Extension](/docs/usage/vscode-extension).
 
 ### Main CLI
 For workflow management and automation, use the [Main CLI](/docs/usage/cli).

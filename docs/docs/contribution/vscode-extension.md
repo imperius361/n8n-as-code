@@ -14,7 +14,7 @@ The VS Code extension (`@n8n-as-code/vscode-extension`) provides a visual interf
 
 - **Workflow Tree View**: Browse workflows organized by n8n instance
 - **Visual Editing**: Webview-based n8n canvas for workflow editing
-- **Real-time Sync**: Automatic synchronization with n8n instances
+- **Git-like Sync**: Explicit push/pull/fetch operations via context menu
 - **Proxy Service**: Secure communication between VS Code and n8n
 
 ## 🏗️ Architecture
@@ -42,7 +42,7 @@ graph TD
     A --> D[ProxyService]
     A --> E[StatusBar]
     
-    B --> F[Sync Library]
+    B --> F[CLI Core / Sync Engine]
     C --> D
     D --> G[n8n API]
     E --> H[VS Code API]
@@ -157,7 +157,7 @@ Shows sync status and quick actions in VS Code status bar.
 - Provide quick access to common commands
 - Update based on sync events
 
-## 🔄 Integration with Sync Library
+## 🔄 Integration with CLI Core
 
 ### Dependency Injection
 The extension uses the Sync library through dependency injection:
@@ -365,7 +365,7 @@ code --install-extension n8n-as-code-*.vsix
 
 ## 📚 Related Documentation
 
-- [Sync Package](/docs/contribution/sync): Sync library details
+- [Sync Engine](/docs/contribution/sync): Sync engine internals (embedded in CLI)
 - [Architecture Overview](/docs/contribution/architecture): Overall system architecture
 - [Contribution Guide](/docs/contribution): How to contribute
 

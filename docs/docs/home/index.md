@@ -19,7 +19,7 @@ n8n-as-code bridges the gap between visual workflow automation and software engi
 - **Version Control**: Leverage the ability for you to version your workflows with Git
 - **TypeScript Support**: Transform workflows into type-safe, readable TypeScript (optional)
 - **AI Agent Support**: Empower AI coding assistants with complete n8n node documentation and schemas
-- **Real-time Sync**: Keep your local files and n8n instance in sync with 3-way merge detection
+- **Git-like Sync**: Explicit push/pull/fetch commands keep your local files and n8n instance in sync with 3-way merge detection
 - **VS Code Integration**: Edit workflows directly in your favorite code editor with visual status indicators
 - **Smart Conflict Resolution**: Deterministic 3-way merge prevents false conflicts with persistent resolution UI
 
@@ -29,14 +29,14 @@ n8n-as-code bridges the gap between visual workflow automation and software engi
 
 <div className="n8n-card">
 
-### 🔄 Real-time Synchronization with 3-Way Merge
+### 🔄 Git-like Synchronization with 3-Way Merge
 
-Keep your workflows synchronized between your local files and n8n instance using a robust **3-way merge architecture**:
-- **Watcher** observes file system and API changes passively
+Keep your workflows synchronized between your local files and n8n instance using a robust **git-like, explicit sync model**:
+- **Explicit operations**: `list`, `fetch`, `pull`, `push` — you control when to sync
 - **3-way comparison** (base vs local vs remote) detects true conflicts
 - **Deterministic detection** eliminates false positive conflicts
-- Changes made in VS Code are instantly reflected in n8n, and vice versa
-- Manual push/pull commands available for more control
+- **Point-in-time status**: `n8nac list` shows current state on demand
+- **Fetch before pull**: update the remote state cache to see accurate status
 
 
 </div>
@@ -94,27 +94,25 @@ n8n-as-code is built as a monorepo with four main packages:
 
 ```mermaid
 graph TD
-    A[Sync Package] --> B[CLI]
+    A[CLI - incl. Sync Engine] --> B[Terminal Users]
     A --> C[VS Code Extension]
     A --> D[Skills]
     
-    B --> E[Terminal Users]
+    B --> E[n8n Instance]
     C --> F[VS Code Users]
     D --> G[AI Assistants]
     
-    E --> H[n8n Instance]
-    F --> H
-    G --> I[AI Context]
+    F --> E
+    G --> H[AI Context]
 ```
 
 ### Packages
 
 | Package | Purpose | Primary Users |
 |---------|---------|---------------|
-| **Sync** | Shared logic, API client, synchronization | All packages |
-| **CLI** | Command-line interface for workflow management | Terminal users, automation |
-| **VS Code Extension** | Integrated development environment | VS Code users |
-| **Skills** | AI context generation & node schemas (formerly Skills CLI) | AI assistants, developers |
+| **CLI** | Command-line interface + embedded sync engine (API client, 3-way merge, state management) | Terminal users, automation |
+| **VS Code Extension** | Integrated development environment, uses CLI's sync engine | VS Code users |
+| **Skills** | AI context generation & node schemas | AI assistants, developers |
 
 ## 🏁 Quick Start
 
@@ -132,13 +130,18 @@ Ready to get started? Here's how to set up n8n-as-code in under 2 minutes:
 
    You'll be prompted to select which **n8n project** to sync.
 
-3. **Sync your workflows**:
+3. **Check workflow status**:
    ```bash
-   n8nac pull
+   n8nac list
    ```
 
-4. **Open in VS Code**:
-   Install the n8n-as-code extension and start editing!
+4. **Pull workflows you want to work on**:
+   ```bash
+   n8nac pull --id <workflowId>
+   ```
+
+5. **Open in VS Code**:
+   Install the n8n-as-code extension and start editing with the git-like workflow!
 
 For detailed instructions, check out our [Getting Started guide](/docs/getting-started).
 
@@ -154,13 +157,13 @@ This documentation is organized into several sections:
 ## 🆕 What's New?
 
 - **Rebranding**: Renamed CLI to `n8nac` and `skills` to `skills` for better developer experience
-- **Major Refactor (Latest)**: 3-way merge architecture for reliable conflict detection
-  - New CLI commands: `start` (replaces `watch`) and `list` for status overview
-   - Project-scoped sync: one selected project at a time (`init` / `switch`)
+- **Major Refactor (Latest)**: Git-like explicit sync architecture for full control and reliable conflict detection
+  - Git-like CLI commands: `list`, `fetch`, `pull`, `push`, `resolve` — all user-triggered
+  - Project-scoped sync: one selected project at a time (`init` / `switch`)
   - Persistent conflict resolution UI in VS Code with expandable action buttons
   - Visual status indicators (color-coded icons) in tree view
   - Enhanced synchronization reliability with atomic operations and backups
-  - Separated state observation (Watcher) from state mutation (SyncEngine)
+  - Sync engine embedded in CLI (`packages/cli/src/core/`) — no separate sync package
 - **Version 0.2.0**: Multi-instance support, improved conflict resolution, enhanced AI context
 - **Version 0.1.0**: Initial release with sync synchronization, VS Code extension, and CLI
 

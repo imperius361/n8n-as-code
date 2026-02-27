@@ -81,23 +81,25 @@ Passive observer service that detects changes without performing synchronization
 ```typescript
 watcher.on('status-changed', (status: IWorkflowStatus) => {...});
 watcher.on('conflict', (conflict: IWorkflowStatus) => {...});
-watcher.on('deletion', (deletion: IWorkflowStatus) => {...});
 ```
 
 **Status Detection Algorithm:**
-Uses 3-way merge comparison (base vs local vs remote):
+Uses 3-way comparison (localHash vs remoteHash vs lastSyncedHash):
 ```typescript
 // Pseudo-code for status detection
-if (!existsLocally && !existsRemotely) return null;
-if (!existsLocally) return DELETED_LOCALLY;
-if (!existsRemotely && !lastSynced) return EXIST_ONLY_LOCALLY;
-if (!existsRemotely && lastSynced) return DELETED_REMOTELY;
-if (!lastSynced) return EXIST_ONLY_REMOTELY;
+if (localHash && !lastSyncedHash && !remoteHash) return EXIST_ONLY_LOCALLY;
+if (remoteExists && !lastSyncedHash && !localHash) return EXIST_ONLY_REMOTELY;
 
-if (localHash === remoteHash) return IN_SYNC;
-if (localHash === lastSyncedHash) return MODIFIED_REMOTELY;
-if (remoteHash === lastSyncedHash) return MODIFIED_LOCALLY;
-return CONFLICT; // Both changed since last sync
+if (localHash === remoteHash) return TRACKED;
+
+const localModified  = localHash  !== lastSyncedHash;
+const remoteModified = remoteHash !== lastSyncedHash;
+
+if (localModified && remoteModified) return CONFLICT;
+if (localModified)  return MODIFIED_LOCALLY;
+if (remoteModified) return TRACKED; // Remote changed — user pulls explicitly
+
+return CONFLICT; // fallback
 ```
 
 ### 2. **SyncEngine** (`src/services/sync-engine.ts`)
@@ -149,20 +151,23 @@ High-level orchestrator that coordinates all components.
 
 **Key Responsibilities:**
 - Orchestrate Watcher, SyncEngine, and ResolutionManager
-- Implement high-level sync strategies (syncUp, syncDown, startWatching)
+- Implement high-level, explicitly-triggered sync operations (fetch, pull, push, resolve)
 - Handle event forwarding and aggregation
 - Provide public API for CLI and VS Code extension
 
 **Public API:**
 ```typescript
 class SyncManager extends EventEmitter {
-  async refreshState(): Promise<void>;
-  async syncUp(): Promise<void>;
-  async syncDown(): Promise<void>;
-  async startWatching(): Promise<void>;
-  async stopWatching(): Promise<void>;
-  async getWorkflowsStatus(): Promise<IWorkflowStatus[]>;
-  async resolveConflict(id: string, filename: string, choice: 'local' | 'remote'): Promise<void>;
+  async listWorkflows(options?: { fetchRemote?: boolean }): Promise<IWorkflowStatus[]>;
+  async fetch(workflowId: string): Promise<boolean>;
+  async pull(workflowId: string): Promise<void>;
+  async push(workflowId?: string, filename?: string): Promise<void>;
+  async refreshLocalState(): Promise<void>;
+  async refreshRemoteState(): Promise<void>;
+  async resolveConflict(workflowId: string, filename: string, resolution: 'local' | 'remote'): Promise<void>;
+  async deleteRemoteWorkflow(workflowId: string, filename: string): Promise<boolean>;
+  getFilenameForId(id: string): string | undefined;
+  getInstanceDirectory(): string;
 }
 ```
 
@@ -170,8 +175,9 @@ class SyncManager extends EventEmitter {
 ```typescript
 syncManager.on('log', (message: string) => {...});
 syncManager.on('conflict', (conflict: IWorkflowStatus) => {...});
-syncManager.on('deletion', (deletion: IWorkflowStatus) => {...});
-syncManager.on('statusChanged', (status: IWorkflowStatus) => {...});
+syncManager.on('change', (status: IWorkflowStatus) => {...});
+syncManager.on('error', (error: Error) => {...});
+syncManager.on('connection-lost', (error: Error) => {...});
 ```
 
 ### 5. **StateManager** (`src/services/state-manager.ts`)

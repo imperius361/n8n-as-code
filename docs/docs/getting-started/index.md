@@ -27,7 +27,7 @@ Before you begin, make sure you have:
 
 ## 🚀 Quick Start: VS Code Extension (Recommended)
 
-The VS Code Extension provides the best user experience with visual editing, real-time sync, and workflow validation.
+The VS Code Extension provides the best user experience with visual editing, git-like sync controls, and workflow validation.
 
 ### Step 1: Install VS Code Extension
 
@@ -49,7 +49,7 @@ The VS Code Extension provides the best user experience with visual editing, rea
 
 1. Click the refresh button in the n8n panel
 2. Your workflows will be downloaded and organized by instance
-3. Start editing workflows with auto-sync enabled
+3. Use the context menu (right-click on a workflow) to **fetch**, **pull**, and **push** changes
 
 ## 🛠️ Alternative: CLI Installation
 

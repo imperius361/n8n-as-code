@@ -1,7 +1,7 @@
 ---
 sidebar_label: VS Code Extension
 title: VS Code Extension Guide
-description: Learn how to use the n8n-as-code VS Code Extension for visual workflow editing with real-time synchronization.
+description: Learn how to use the n8n-as-code VS Code Extension for visual workflow editing with git-like synchronization.
 ---
 
 # VS Code Extension Guide
@@ -20,25 +20,19 @@ Your workflows are automatically organized by instance to avoid mixing files fro
 ### 🎯 Visual Status Indicators
 The tree view displays color-coded icons showing the sync status of each workflow at a glance:
 
-- **✅ Green sync icon** - `IN_SYNC`: Workflow is synchronized between local and remote
-- **📝 Orange pencil** - `MODIFIED_LOCALLY`: Local changes not yet pushed
-- **☁️ Orange cloud** - `MODIFIED_REMOTELY`: Remote changes not yet pulled  
-- **📁 Orange file** - `EXIST_ONLY_LOCALLY`: New local workflow not yet pushed
-- **☁️ Orange cloud** - `EXIST_ONLY_REMOTELY`: New remote workflow not yet pulled
+- **📄 Plain file** - `TRACKED`: Both local and remote exist (in sync, or remote updated — pull to get changes)
+- **✏️ Orange pencil** - `MODIFIED_LOCALLY`: Local changes not yet pushed
+- **☁️ Blue cloud** - `EXIST_ONLY_REMOTELY`: Remote workflow not yet pulled locally
+- **📄+ Orange file-add** - `EXIST_ONLY_LOCALLY`: New local workflow not yet pushed
 - **🔴 Red alert** - `CONFLICT`: Both local and remote modified since last sync
-- **🗑️ Grey trash** - `DELETED_LOCALLY` / `DELETED_REMOTELY`: Workflow deleted on one side
 
 ### 🛡️ Persistent Conflict Resolution UI
-Workflows in **conflict** or **deleted** states become **expandable tree items** with child action buttons, ensuring you never lose track of issues that need resolution:
+Workflows in **conflict** state become **expandable tree items** with child action buttons, ensuring you never lose track of issues that need resolution:
 
 **For Conflicts:**
 - **📄 Show Diff** - Opens a side-by-side diff view comparing local and remote versions
 - **✅ Keep Local Version** - Force push local changes to remote (overwrite remote)
 - **☁️ Keep Remote Version** - Force pull remote changes to local (overwrite local)
-
-**For Deletions:**
-- **🗑️ Confirm Deletion** - Delete the workflow from n8n
-- **↩️ Restore File** - Restore the local file from remote
 
 These actions remain visible in the tree until resolved, preventing conflicts from being forgotten or lost.
 
@@ -102,10 +96,10 @@ The extension automatically connects to n8n when:
 
 If connection fails, check the Output panel (View > Output, select "n8n-as-code") for error details.
 
-### Pulling Workflows
-1. Click the refresh button in the n8n panel
-2. All workflows will be downloaded to your local `workflows` directory
-3. Workflows are organized by instance
+### Fetching & Pulling Workflows
+1. Click the refresh button in the n8n panel to update the remote state cache and see current status
+2. Right-click a workflow and select **Pull** to download it locally
+3. Workflows are organized by instance in your local directory
 
 ### Editing Workflows
 1. Click a workflow in the tree view to open the JSON editor
@@ -116,13 +110,13 @@ If connection fails, check the Output panel (View > Output, select "n8n-as-code"
    - **Left**: JSON editor
    - **Right**: n8n canvas preview
 4. Make changes in the JSON editor
-5. Save (`Ctrl+S`) to sync to n8n (when auto-sync is enabled)
+5. Right-click the workflow in the tree view and select **Push** to send your changes to n8n
 
 ### Creating New Workflows
 To create a new workflow:
 1. Create a new JSON file in your workflows directory
 2. Use the n8n schema for structure guidance
-3. The extension will detect the new file and sync it to n8n automatically
+3. Right-click the file in the tree view and select **Push** to upload it to n8n
 
 ### Resolving Conflicts
 When a workflow has a conflict (both local and remote modified):
@@ -132,28 +126,20 @@ When a workflow has a conflict (both local and remote modified):
    - **✅ Keep Local Version** - Push your local changes
    - **☁️ Keep Remote Version** - Pull remote changes
 3. Click the desired action to resolve
-4. The workflow returns to normal sync state
-
-### Handling Deletions
-When a workflow is deleted locally or remotely:
-1. The workflow appears with a **🗑️ grey trash icon** in the tree
-2. Expand the workflow to see actions:
-   - **🗑️ Confirm Deletion** - Delete from n8n
-   - **↩️ Restore File** - Restore the local file
-3. Choose an action to resolve the deletion state
+4. The workflow returns to `TRACKED` state
 
 ## 🔄 Sync Behavior
 
-### Auto Sync (Default)
-- Changes are automatically pushed to n8n on save
-- Remote changes are automatically pulled
-- Conflicts require manual resolution
-- Best for most use cases
+### Git-like Explicit Sync
+All sync operations are **user-triggered** — nothing syncs automatically. Follow this git-like pattern:
 
-### Manual Sync
-- Changes are only synced when you manually trigger sync actions
-- Gives you more control over when changes are pushed
-- Use the action buttons in the tree view for manual operations
+1. **List**: Right-click a workflow or use the tree refresh to see current sync status
+2. **Fetch**: Fetch remote state to update the local cache for accurate status
+3. **Pull**: Download remote changes you want to incorporate
+4. **Edit**: Make your changes locally
+5. **Push**: Upload your changes back to n8n
+
+This explicit model gives you full control and prevents unexpected overwrites.
 
 ### 3-Way Merge Detection
 The extension uses a sophisticated 3-way merge algorithm to detect conflicts:
@@ -205,7 +191,7 @@ AI coding assistants (like Cursor, Copilot, Claude, etc.) can use these generate
 - Check network connectivity
 
 **Sync not working**
-- Check if auto-sync is enabled in settings
+- Use **Fetch** from the context menu to refresh remote state
 - Verify file permissions
 - Check network connectivity
 
@@ -226,4 +212,4 @@ AI coding assistants (like Cursor, Copilot, Claude, etc.) can use these generate
 
 ---
 
-*The VS Code Extension provides the best user experience for editing n8n workflows with real-time synchronization and visual feedback.*
+*The VS Code Extension provides the best user experience for editing n8n workflows with git-like sync controls and visual feedback.*

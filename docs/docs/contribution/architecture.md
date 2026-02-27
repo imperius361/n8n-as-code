@@ -13,8 +13,7 @@ n8n-as-code is a monorepo built with a modular architecture that separates conce
 ```
 n8n-as-code/
 ├── packages/
-│   ├── sync/           # Sync library (shared logic)
-│   ├── cli/            # Command-line interface
+│   ├── cli/            # Command-line interface + embedded sync engine
 │   ├── skills/      # AI agent integration
 │   └── vscode-extension/ # VS Code extension
 ├── docs/               # Documentation (Docusaurus)
@@ -26,10 +25,10 @@ n8n-as-code/
 
 ```mermaid
 graph TD
-    A[VS Code Extension] --> B[Sync Library]
+    A[VS Code Extension] --> B[CLI - incl. Sync Engine]
     C[CLI] --> B
-    D[Skills CLI] --> B
-    B --> E[n8n API]
+    D[Skills CLI] --> E[n8n API]
+    B --> E
     
     style A fill:#ff6b35
     style C fill:#ff6b35
@@ -75,11 +74,11 @@ graph TD
 // Sync services architecture
 classDiagram
     class Watcher {
-        +startWatching()
-        +stopWatching()
+        +start()
+        +stop()
         +scanLocalFiles()
-        +pollRemoteWorkflows()
-        -detectChanges()
+        +refreshRemoteState()
+        -calculateStatus()
     }
     
     class SyncEngine {
@@ -96,10 +95,13 @@ classDiagram
     }
     
     class SyncManager {
-        +refreshState()
-        +syncUp()
-        +syncDown()
-        +startWatching()
+        +listWorkflows()
+        +fetch(workflowId)
+        +pull(workflowId)
+        +push(workflowId)
+        +resolveConflict()
+        +refreshLocalState()
+        +refreshRemoteState()
     }
     
     class StateManager {
@@ -159,11 +161,12 @@ classDiagram
 
 #### 4. **SyncManager** (Orchestration)
 - High-level orchestrator that coordinates components
-- `refreshState()` - Triggers Watcher to scan and emit status
-- `syncUp()` - Pushes local-only and modified-locally workflows
-- `syncDown()` - Pulls remote-only and modified-remotely workflows
-- `startWatching()` - Starts continuous monitoring mode
-- Emits events: `log`, `conflict`, `deletion`, `statusChanged`
+- `listWorkflows()` - Lists all workflows with current sync status
+- `fetch(workflowId)` - Updates remote state cache for a specific workflow
+- `pull(workflowId)` - Downloads remote workflow to local file
+- `push(workflowId)` - Uploads local workflow to n8n
+- `resolveConflict()` - Force-resolves conflicts keeping local or remote
+- Emits events: `log`, `conflict`, `change`, `error`, `connection-lost`
 
 #### 5. **StateManager**
 - Manages `.n8n-state.json` file (the "base" in 3-way merge)
@@ -182,20 +185,17 @@ classDiagram
 - Sorts nodes and connections canonically for consistent hashing
 - Ensures compatibility with n8n
 
-### 8 Workflow States
+### 5 Workflow States
 
 Based on 3-way comparison (base vs local vs remote):
 
-| Status | Description |
-|--------|-------------|
-| `IN_SYNC` | Local and remote match |
-| `MODIFIED_LOCALLY` | Local changed since last sync, remote unchanged |
-| `MODIFIED_REMOTELY` | Remote changed since last sync, local unchanged |
-| `CONFLICT` | Both local and remote changed since last sync |
-| `EXIST_ONLY_LOCALLY` | New workflow created locally |
-| `EXIST_ONLY_REMOTELY` | New workflow created remotely |
-| `DELETED_LOCALLY` | Local file removed |
-| `DELETED_REMOTELY` | Remote workflow deleted |
+| Status | Icon | Description |
+|--------|------|-------------|
+| `TRACKED` | 📄 plain file | Both local and remote exist; remote may have changed — user pulls explicitly |
+| `MODIFIED_LOCALLY` | ✏️ orange pencil | Local changed since last sync, remote unchanged |
+| `CONFLICT` | 🔴 red alert | Both local and remote changed since last sync |
+| `EXIST_ONLY_LOCALLY` | 📄+ orange file-add | New workflow created locally, not yet pushed |
+| `EXIST_ONLY_REMOTELY` | ☁️ blue cloud | Workflow exists remotely, not yet pulled locally |
 
 ## 🔌 VS Code Extension Architecture
 
@@ -264,15 +264,15 @@ classDiagram
         +handleConflicts()
     }
     
-    class WatchCommand {
-        +watchChanges()
-        +autoSync()
+    class ListCommand {
+        +listWorkflows()
+        +filterByStatus()
     }
     
     CLI --> BaseCommand
     BaseCommand <|-- InitCommand
     BaseCommand <|-- SyncCommand
-    BaseCommand <|-- WatchCommand
+    BaseCommand <|-- ListCommand
 ```
 
 ### Command Processing
@@ -326,20 +326,20 @@ sequenceDiagram
     participant User
     participant VS Code
     participant CLI
-    participant Sync
+    participant SyncEngine
     participant n8n
     
-    User->>VS Code: Edit workflow
-    VS Code->>Sync: Detect changes
-    Sync->>n8n: Push changes
-    n8n-->>Sync: Confirm update
-    Sync-->>VS Code: Update status
+    User->>VS Code: Right-click → Push workflow
+    VS Code->>SyncEngine: push(workflowId)
+    SyncEngine->>n8n: Upload changes
+    n8n-->>SyncEngine: Confirm update
+    SyncEngine-->>VS Code: Update status (TRACKED)
     
-    User->>CLI: Run sync command
-    CLI->>Sync: Sync workflows
-    Sync->>n8n: Pull latest
-    n8n-->>Sync: Return workflows
-    Sync-->>CLI: Save locally
+    User->>CLI: n8nac pull --id <workflowId>
+    CLI->>SyncEngine: pull(workflowId)
+    SyncEngine->>n8n: Download latest
+    n8n-->>SyncEngine: Return workflow
+    SyncEngine-->>CLI: Save locally, update .n8n-state.json
 ```
 
 ### Conflict Resolution
@@ -415,7 +415,7 @@ npm run docs
 
 ## 📚 Related Documentation
 
-- [Sync Package](/docs/contribution/sync): Sync library details
+- [Sync Engine](/docs/contribution/sync): Sync engine internals (embedded in CLI)
 - [Skills CLI](/docs/contribution/skills): AI integration details
 - [Contribution Guide](/docs/contribution): How to contribute
 

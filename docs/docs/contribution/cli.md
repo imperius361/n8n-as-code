@@ -13,8 +13,7 @@ description: Development guide for the n8n-as-code CLI package, covering archite
 The CLI package (`@n8n-as-code/cli`) provides a command-line interface for managing n8n workflows from the terminal. It offers:
 
 - **Project Management**: Initialize and configure n8n-as-code projects
-- **Workflow Synchronization**: Sync workflows between local files and n8n
-- **Watch Mode**: Real-time synchronization on file changes
+- **Workflow Synchronization**: Sync workflows between local files and n8n with git-like commands
 - **AI Assistance**: AI-powered workflow generation and assistance
 
 ## 🏗️ Architecture
@@ -28,8 +27,8 @@ packages/cli/
 │   │   ├── base.ts           # Base command class
 │   │   ├── init.ts           # Init command
 │   │   ├── init-ai.ts        # AI-assisted init
-│   │   ├── sync.ts           # Sync command
-│   │   └── watch.ts          # Watch command
+│   │   ├── list.ts           # List command
+│   │   └── sync.ts           # Sync command (pull/push/fetch/resolve)
 │   └── services/
 │       └── config-service.ts # Configuration management
 ├── bin/
@@ -45,9 +44,9 @@ graph TD
     B --> C[InitCommand]
     B --> D[InitAICommand]
     B --> E[SyncCommand]
-    B --> F[WatchCommand]
+    B --> F[ListCommand]
     
-    C --> G[Sync Library]
+    C --> G[CLI Core / Sync Engine]
     D --> H[AI Services]
     E --> G
     F --> G
@@ -73,7 +72,7 @@ The main entry point that sets up the CLI application.
 **Setup:**
 ```typescript
 import { Command } from 'commander';
-import { InitCommand, SyncCommand, WatchCommand, InitAICommand } from './commands';
+import { InitCommand, SyncCommand, ListCommand, InitAICommand } from './commands';
 
 const program = new Command();
 
@@ -85,7 +84,7 @@ program
 // Register commands
 new InitCommand(program);
 new SyncCommand(program);
-new WatchCommand(program);
+new ListCommand(program);
 new InitAICommand(program);
 
 program.parse(process.argv);
@@ -172,33 +171,14 @@ interface SyncOptions {
 }
 ```
 
-### 5. **Watch Command (`commands/watch.ts`)**
-Watches for file changes and automatically syncs.
+### 5. **List Command (`commands/list.ts`)**
+Shows current sync status of all workflows.
 
 **Key Responsibilities:**
-- Monitor workflow directory for changes
-- Trigger sync on file modifications
-- Debounce events to prevent excessive syncing
-- Provide real-time status updates
-
-**Watch Implementation:**
-```typescript
-class WatchCommand extends BaseCommand {
-  private watcher: chokidar.FSWatcher;
-  
-  async execute(options: any): Promise<void> {
-    this.watcher = chokidar.watch('workflows/**/*.json', {
-      ignored: /(^|[\/\\])\../, // ignore dotfiles
-      persistent: true
-    });
-    
-    this.watcher
-      .on('change', this.handleChange.bind(this))
-      .on('add', this.handleAdd.bind(this))
-      .on('unlink', this.handleDelete.bind(this));
-  }
-}
-```
+- Fetch fresh remote metadata on each invocation
+- Calculate 3-way status (local vs remote vs base)
+- Display color-coded status table
+- Support `--local` / `--remote` filters for focused views
 
 ### 6. **Init AI Command (`commands/init-ai.ts`)**
 AI-assisted project initialization.
@@ -221,10 +201,10 @@ Manages CLI configuration.
 **Configuration Sources:**
 The CLI currently loads local configuration from `n8nac-config.json` in the current working directory and stores API keys in a secure global credential store.
 
-## 🔄 Integration with Sync Library
+## 🔄 Integration with CLI Core
 
-### Sync Library Usage
-The CLI uses the Sync library for all n8n operations:
+### Sync Engine Usage
+The CLI commands use the sync engine (embedded in `packages/cli/src/core/`):
 
 ```typescript
 import { SyncManager, StateManager, N8nApiClient } from '@n8n-as-code/cli';
@@ -451,7 +431,7 @@ curl -H "X-N8N-API-KEY: your-key" https://your-n8n.com/api/v1/workflows
 ### Debug Mode
 Enable verbose logging:
 ```bash
-n8nac start
+DEBUG=n8n-as-code:* n8nac list
 ```
 
 ### Log Files
@@ -459,7 +439,7 @@ Check the terminal output (and VS Code Output panel when using the extension) fo
 
 ## 📚 Related Documentation
 
-- [Sync Package](/docs/contribution/sync): Sync library details
+- [Sync Engine](/docs/contribution/sync): Sync engine internals (embedded in CLI)
 - [Architecture Overview](/docs/contribution/architecture): Overall system architecture
 - [VS Code Extension](/docs/contribution/vscode-extension): VS Code extension development
 - [Contribution Guide](/docs/contribution): How to contribute
