@@ -112,12 +112,11 @@ const n8nacCliBuild = fs.existsSync(finalN8nacCliEntry) ? esbuild.build({
     external: ['vscode'],
     format: 'cjs',
     platform: 'node',
-    // Force the CJS entry point of prettier so that import.meta.url (which becomes
-    // undefined inside a CJS bundle) is never reached.  Without this alias esbuild
-    // picks up prettier/index.mjs whose createRequire(import.meta.url) call crashes.
-    alias: {
-        prettier: 'prettier/index.cjs',
-    },
+    // Force the CommonJS export condition for ALL packages (including dynamic imports).
+    // Without this, esbuild resolves dynamic `await import('prettier')` using the
+    // 'import' condition → picks up prettier/index.mjs → createRequire(import.meta.url)
+    // crashes because import.meta.url is undefined in a CJS bundle.
+    conditions: ['require', 'node', 'default'],
     logOverride: {
         'empty-import-meta': 'silent'
     }
