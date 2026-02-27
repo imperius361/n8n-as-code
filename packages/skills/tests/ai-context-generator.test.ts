@@ -57,8 +57,9 @@ describe('AiContextGenerator', () => {
     });
 
     describe('Shim Generation', () => {
-        test('should generate robust shim checking for local node_modules', async () => {
-            await generator.generate(tempDir);
+        test('should generate robust shim checking for local node_modules (simulate VS Code)', async () => {
+            const mockExtPath = '/mock/extension/path';
+            await generator.generate(tempDir, undefined, mockExtPath);
 
             const shimPath = path.join(tempDir, 'n8nac-skills');
             expect(fs.existsSync(shimPath)).toBe(true);
@@ -69,8 +70,8 @@ describe('AiContextGenerator', () => {
             expect(content).toContain('CLI_PATH="./node_modules/@n8n-as-code/skills/dist/cli.js"');
             expect(content).toContain('if [ -f "$CLI_PATH" ]; then');
 
-            // Should NOT contain absolute build paths
-            expect(content).not.toContain(path.resolve(__dirname, '../src/services'));
+            // Should contain extension absolute path check when extensionPath provided
+            expect(content).toContain(`if [ -f "${mockExtPath}/out/skills/cli.js"`);
         });
 
         test('should prioritize extension path if provided', async () => {
