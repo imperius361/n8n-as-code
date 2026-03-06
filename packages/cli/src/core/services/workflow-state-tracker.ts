@@ -7,6 +7,31 @@ import { HashUtils } from './hash-utils.js';
 import { WorkflowSyncStatus, IWorkflowStatus, IWorkflow } from '../types.js';
 import { IWorkflowState, IInstanceState } from './state-manager.js';
 
+const WINDOWS_RESERVED_FILENAMES = new Set([
+    'CON',
+    'PRN',
+    'AUX',
+    'NUL',
+    'COM1',
+    'COM2',
+    'COM3',
+    'COM4',
+    'COM5',
+    'COM6',
+    'COM7',
+    'COM8',
+    'COM9',
+    'LPT1',
+    'LPT2',
+    'LPT3',
+    'LPT4',
+    'LPT5',
+    'LPT6',
+    'LPT7',
+    'LPT8',
+    'LPT9'
+]);
+
 /**
  * Watcher - State Observation Component
  * 
@@ -518,7 +543,60 @@ export class WorkflowStateTracker extends EventEmitter {
     }
 
     private safeName(name: string): string {
-        return name.replace(/[\/\\:]/g, '_').replace(/\s+/g, ' ').trim();
+        const originalName = name || '';
+        let safeName = originalName;
+
+        const invalidCharMatches = safeName.match(/[\u0000-\u001f<>:"/\\|?*]/g) || [];
+        if (invalidCharMatches.length > 0) {
+            console.log(
+                `[WorkflowStateTracker] Sanitizing filename "${originalName}": replacing invalid characters ` +
+                `[${invalidCharMatches.map(char => JSON.stringify(char)).join(', ')}] with "_"`
+            );
+            safeName = safeName.replace(/[\u0000-\u001f<>:"/\\|?*]/g, '_');
+        }
+
+        const collapsedWhitespace = safeName.replace(/\s+/g, ' ').trim();
+        if (collapsedWhitespace !== safeName) {
+            console.log(
+                `[WorkflowStateTracker] Sanitizing filename "${originalName}": normalizing whitespace -> "${collapsedWhitespace}"`
+            );
+            safeName = collapsedWhitespace;
+        } else {
+            safeName = collapsedWhitespace;
+        }
+
+        const withoutTrailingDotsOrSpaces = safeName.replace(/[. ]+$/g, '');
+        if (withoutTrailingDotsOrSpaces !== safeName) {
+            console.log(
+                `[WorkflowStateTracker] Sanitizing filename "${originalName}": removing trailing dots/spaces -> "${withoutTrailingDotsOrSpaces}"`
+            );
+            safeName = withoutTrailingDotsOrSpaces;
+        } else {
+            safeName = withoutTrailingDotsOrSpaces;
+        }
+
+        if (!safeName) {
+            console.log(
+                `[WorkflowStateTracker] Sanitizing filename "${originalName}": result was empty, using fallback "workflow"`
+            );
+            safeName = 'workflow';
+        }
+
+        if (WINDOWS_RESERVED_FILENAMES.has(safeName.toUpperCase())) {
+            console.log(
+                `[WorkflowStateTracker] Sanitizing filename "${originalName}": "${safeName}" is a reserved Windows device name, appending "_"`
+            );
+            safeName = `${safeName}_`;
+        }
+
+        const finalName = safeName.replace(/[. ]+$/g, '') || 'workflow';
+        if (finalName !== originalName) {
+            console.log(
+                `[WorkflowStateTracker] Final sanitized filename segment: "${originalName}" -> "${finalName}"`
+            );
+        }
+
+        return finalName;
     }
 
     /**
