@@ -582,11 +582,15 @@ export class WorkflowStateTracker extends EventEmitter {
             safeName = 'workflow';
         }
 
-        if (WINDOWS_RESERVED_FILENAMES.has(safeName.toUpperCase())) {
+        const firstDotIndex = safeName.indexOf('.');
+        const baseName = firstDotIndex === -1 ? safeName : safeName.slice(0, firstDotIndex);
+        const rest = firstDotIndex === -1 ? '' : safeName.slice(firstDotIndex);
+
+        if (WINDOWS_RESERVED_FILENAMES.has(baseName.toUpperCase())) {
             console.log(
-                `[WorkflowStateTracker] Sanitizing filename "${originalName}": "${safeName}" is a reserved Windows device name, appending "_"`
+                `[WorkflowStateTracker] Sanitizing filename "${originalName}": "${baseName}" is a reserved Windows device name, appending "_"`
             );
-            safeName = `${safeName}_`;
+            safeName = `${baseName}_` + rest;
         }
 
         const finalName = safeName.replace(/[. ]+$/g, '') || 'workflow';
